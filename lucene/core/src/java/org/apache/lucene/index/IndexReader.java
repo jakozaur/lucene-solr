@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.DocumentStoredFieldVisitor;
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.util.Bits;  // javadocs
 import org.apache.lucene.util.IOUtils;
@@ -342,6 +343,12 @@ public abstract class IndexReader implements Closeable {
    *  #document(int)}.  If you want to load a subset, use
    *  {@link DocumentStoredFieldVisitor}.  */
   public abstract void document(int docID, StoredFieldVisitor visitor) throws IOException;
+
+  /** Expert: Like {@link #document(int, StoredFieldVisitor)},
+   * but loads many documents at onceto get better performance.
+   * If you want to load a subset, use
+   *  {@link MultiDocumentStoredFieldVisitor}.  */
+   public abstract void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) throws IOException;
   
   /**
    * Returns the stored fields of the <code>n</code><sup>th</sup>
@@ -382,6 +389,26 @@ public abstract class IndexReader implements Closeable {
         fieldsToLoad);
     document(docID, visitor);
     return visitor.getDocument();
+  }
+
+  /**
+   * Like {@link #document(int)} but loads many document at same time and only the specified
+   * fields.
+   */
+  public final List<Document> documents(int[] docIDs) throws IOException {
+    final MultiDocumentStoredFieldVisitor visitor = new MultiDocumentStoredFieldVisitor();
+    documents(docIDs, visitor);
+    return visitor.getDocuments();
+  }
+
+  /**
+   * Like {@link #documents(int[])} but loads many document at same time and only the specified
+   * fields.
+   */
+  public final List<Document> documents(int[] docIDs, Set<String> fieldsToLoad) throws IOException {
+    final MultiDocumentStoredFieldVisitor visitor = new MultiDocumentStoredFieldVisitor(fieldsToLoad);
+    documents(docIDs, visitor);
+    return visitor.getDocuments();
   }
 
   /** Returns true if any documents have been deleted. Implementers should
