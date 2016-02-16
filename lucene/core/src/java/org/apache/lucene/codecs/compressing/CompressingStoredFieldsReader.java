@@ -566,6 +566,57 @@ public final class CompressingStoredFieldsReader extends StoredFieldsReader {
       return new SerializedDocument(documentInput, length, numStoredFields);
     }
 
+    /**
+     * Get the serialized representation of the given docIDs. The docIDs
+     * have to be sorted and contained in the current block.
+     */
+    SerializedDocument[] documents(int[] docIDs) throws IOException {
+      if (docIDs == null || docIDs.length == 0 ||
+          docIDs[0] < docBase ||
+          docIDs[docIDs.length - 1] >= docBase + chunkDocs) {
+        throw new IllegalArgumentException();
+      }
+      for (int i = 0; i + 1 < docIDs.length; i++) {
+        if (docIDs[i] > docIDs[i + 1]) {
+          throw new IllegalArgumentException();
+        }
+      }
+
+      // Sliced block doesn't take advantage of this optimization, so it's easier to use original document call.
+      final SerializedDocument[] result = new SerializedDocument[docIDs.length];
+      if (sliced) {
+        for (int i = 0; i < docIDs.length; i++) {
+          result[i] = document(docIDs[i]);
+        }
+        return result;
+      }
+
+      // Decompress if needed
+      if (!merging) {
+        final int firstOffset = offsets[docIDs[0] - docBase];
+        final int lastLength = offsets[docIDs[docIDs.length - 1] - docBase + 1];
+        final int totalLength = offsets[chunkDocs];
+
+        fieldsStream.seek(startPointer);
+        decompressor.decompress(fieldsStream, totalLength, firstOffset, lastLength, bytes);
+        assert bytes.length == lastLength;
+      }
+
+      // Fill results
+      for (int i = 0; i < docIDs.length; i++) {
+        final int index = docIDs[i] - docBase;
+        final int offset = offsets[index];
+        final int length = offsets[index+1] - offset;
+        final int numStoredFields = this.numStoredFields[index];
+
+        final DataInput documentInput = new ByteArrayDataInput(bytes.bytes, bytes.offset + offset, length);
+
+        result[i] = new SerializedDocument(documentInput, length, numStoredFields);
+      }
+
+      return result;
+    }
+
   }
 
   SerializedDocument document(int docID) throws IOException {
@@ -619,11 +670,28 @@ public final class CompressingStoredFieldsReader extends StoredFieldsReader {
     final int[] sortedDocIDs = Arrays.copyOf(docIDs, docIDs.length);
     Arrays.sort(sortedDocIDs);
 
-    // TODO: take advantage of different optimizations
-    for (int sortedDocID : sortedDocIDs) {
-      final SerializedDocument doc = document(sortedDocID);
+    for (int i = 0; i < sortedDocIDs.length; ) {
+      int step = 1;
+      if (state.contains(sortedDocIDs[i]) == false) {
+        fieldsStream.seek(indexReader.getStartPointer(sortedDocIDs[i]));
+        state.reset(sortedDocIDs[i]);
+      }
+      while (i + step < sortedDocIDs.length && state.contains(sortedDocIDs[i + step])) {
+        step += 1;
+      }
 
-      visitSerializedDocument(doc, visitor);
+      if (step == 1) {
+        visitSerializedDocument(state.document(sortedDocIDs[i]), visitor);
+        visitor.newDocument();
+      } else {
+        final SerializedDocument[] docs = state.documents(Arrays.copyOfRange(sortedDocIDs, i, i + step));
+        for (SerializedDocument doc : docs) {
+          visitSerializedDocument(doc, visitor);
+          visitor.newDocument();
+        }
+      }
+
+      i += step;
     }
   }
 
