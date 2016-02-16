@@ -26,6 +26,7 @@ import org.apache.lucene.codecs.FieldsProducer;
 import org.apache.lucene.codecs.NormsProducer;
 import org.apache.lucene.codecs.StoredFieldsReader;
 import org.apache.lucene.codecs.TermVectorsReader;
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.util.Bits;
 
 /**
@@ -253,6 +254,11 @@ public final class SlowCodecReaderWrapper {
       @Override
       public void visitDocument(int docID, StoredFieldVisitor visitor) throws IOException {
         reader.document(docID, visitor);
+      }
+
+      @Override
+      public void visitDocuments(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) throws IOException {
+        reader.documents(docIDs, visitor);
       }
 
       @Override

@@ -31,6 +31,7 @@ import org.apache.lucene.codecs.FieldsProducer;
 import org.apache.lucene.codecs.NormsProducer;
 import org.apache.lucene.codecs.StoredFieldsReader;
 import org.apache.lucene.codecs.TermVectorsReader;
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.Accountables;
 import org.apache.lucene.util.Bits;
@@ -86,6 +87,14 @@ public abstract class CodecReader extends LeafReader implements Accountable {
   public final void document(int docID, StoredFieldVisitor visitor) throws IOException {
     checkBounds(docID);
     getFieldsReader().visitDocument(docID, visitor);
+  }
+
+  @Override
+  public void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) throws IOException {
+    for (int i = 0; i < docIDs.length; i++) {
+      checkBounds(docIDs[i]);
+    }
+    getFieldsReader().visitDocuments(docIDs, visitor);
   }
   
   @Override

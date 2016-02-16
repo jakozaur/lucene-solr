@@ -20,6 +20,7 @@ package org.apache.lucene.codecs.simpletext;
 import java.io.IOException;
 
 import org.apache.lucene.codecs.StoredFieldsReader;
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.IndexFileNames;
@@ -146,6 +147,12 @@ public class SimpleTextStoredFieldsReader extends StoredFieldsReader {
         case STOP: return;
       }
     }
+  }
+
+  @Override
+  public void visitDocuments(int[] docIDs, MultiDocumentStoredFieldVisitor visitor)
+      throws IOException {
+    throw new UnsupportedOperationException();
   }
   
   private void readField(BytesRef type, FieldInfo fieldInfo, StoredFieldVisitor visitor) throws IOException {

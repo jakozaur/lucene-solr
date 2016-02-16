@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.util.Bits;
 
 /** An {@link LeafReader} which reads multiple, parallel indexes.  Each index
@@ -225,6 +226,13 @@ public class ParallelLeafReader extends LeafReader {
     ensureOpen();
     for (final LeafReader reader: storedFieldsReaders) {
       reader.document(docID, visitor);
+    }
+  }
+  @Override
+  public void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) throws IOException {
+    ensureOpen();
+    for (final LeafReader reader : storedFieldsReaders) {
+      reader.documents(docIDs, visitor);
     }
   }
   

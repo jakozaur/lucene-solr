@@ -33,6 +33,7 @@ import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -1171,6 +1172,12 @@ public class MemoryIndex {
     @Override
     public void document(int docID, StoredFieldVisitor visitor) {
       if (DEBUG) System.err.println("MemoryIndexReader.document");
+      // no-op: there are no stored fields
+    }
+
+    @Override
+    public void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) {
+      if (DEBUG) System.err.println("MemoryIndexReader.documents");
       // no-op: there are no stored fields
     }
   

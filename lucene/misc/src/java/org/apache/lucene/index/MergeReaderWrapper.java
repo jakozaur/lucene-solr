@@ -23,6 +23,7 @@ import org.apache.lucene.codecs.FieldsProducer;
 import org.apache.lucene.codecs.NormsProducer;
 import org.apache.lucene.codecs.StoredFieldsReader;
 import org.apache.lucene.codecs.TermVectorsReader;
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.util.Bits;
 
 /** this is a hack to make SortingMP fast! */
@@ -229,6 +230,15 @@ class MergeReaderWrapper extends LeafReader {
     ensureOpen();
     checkBounds(docID);
     store.visitDocument(docID, visitor);
+  }
+
+  @Override
+  public void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) throws IOException {
+    ensureOpen();
+    for (int i = 0; i < docIDs.length; i++) {
+      checkBounds(docIDs[i]);
+    }
+    store.visitDocuments(docIDs, visitor);
   }
 
   @Override

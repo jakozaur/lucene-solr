@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.PointValues;
 import org.apache.lucene.index.DocValuesType;
@@ -178,4 +179,7 @@ public class TermVectorLeafReader extends LeafReader {
   public void document(int docID, StoredFieldVisitor visitor) throws IOException {
   }
 
+  @Override
+  public void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) {
+  }
 }

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Objects;
 
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.search.QueryCache;
 import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.Bits;
@@ -408,6 +409,12 @@ public class FilterLeafReader extends LeafReader {
   public void document(int docID, StoredFieldVisitor visitor) throws IOException {
     ensureOpen();
     in.document(docID, visitor);
+  }
+
+  @Override
+  public void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) throws IOException {
+    ensureOpen();
+    in.documents(docIDs, visitor);
   }
 
   @Override

@@ -48,6 +48,7 @@ import java.util.Collections;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.codecs.StoredFieldsReader;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
@@ -604,6 +605,12 @@ public final class CompressingStoredFieldsReader extends StoredFieldsReader {
           return;
       }
     }
+  }
+
+  @Override
+  public void visitDocuments(int[] docIDs, MultiDocumentStoredFieldVisitor visitor)
+      throws IOException {
+    throw new UnsupportedOperationException();
   }
 
   @Override

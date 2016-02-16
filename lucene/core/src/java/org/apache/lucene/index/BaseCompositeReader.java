@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
+
 /** Base class for implementing {@link CompositeReader}s based on an array
  * of sub-readers. The implementing class has to add code for
  * correctly refcounting and closing the sub-readers.
@@ -116,6 +118,25 @@ public abstract class BaseCompositeReader<R extends IndexReader> extends Composi
     ensureOpen();
     final int i = readerIndex(docID);                          // find subreader num
     subReaders[i].document(docID - starts[i], visitor);    // dispatch to subreader
+  }
+
+  @Override
+  public void documents(int[] docIDs, MultiDocumentStoredFieldVisitor visitor) throws IOException {
+    ensureOpen();
+    int[] sortedDocIds = Arrays.copyOf(docIDs, docIDs.length);
+    Arrays.sort(sortedDocIds);
+    for (int i = 0, step; i < sortedDocIds.length; i += step) {
+      step = 1;
+      int sub = readerIndex(sortedDocIds[i]);
+      while (i + step < sortedDocIds.length && sub == readerIndex(sortedDocIds[i + step])) {
+        step++;
+      }
+      int[] subDocIds = Arrays.copyOfRange(sortedDocIds, i, i + step);
+      for (int j = 0; j < subDocIds.length; j++) {
+        subDocIds[j] -= starts[sub];
+      }
+      subReaders[sub].documents(subDocIds, visitor);
+    }
   }
 
   @Override
