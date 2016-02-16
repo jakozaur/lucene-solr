@@ -577,12 +577,8 @@ public final class CompressingStoredFieldsReader extends StoredFieldsReader {
     return state.document(docID);
   }
 
-  @Override
-  public void visitDocument(int docID, StoredFieldVisitor visitor)
+  private void visitSerializedDocument(SerializedDocument doc, StoredFieldVisitor visitor)
       throws IOException {
-
-    final SerializedDocument doc = document(docID);
-
     for (int fieldIDX = 0; fieldIDX < doc.numStoredFields; fieldIDX++) {
       final long infoAndBits = doc.in.readVLong();
       final int fieldNumber = (int) (infoAndBits >>> TYPE_BITS);
@@ -608,9 +604,27 @@ public final class CompressingStoredFieldsReader extends StoredFieldsReader {
   }
 
   @Override
+  public void visitDocument(int docID, StoredFieldVisitor visitor)
+      throws IOException {
+
+    final SerializedDocument doc = document(docID);
+
+    visitSerializedDocument(doc, visitor);
+  }
+
+  @Override
   public void visitDocuments(int[] docIDs, MultiDocumentStoredFieldVisitor visitor)
       throws IOException {
-    throw new UnsupportedOperationException();
+    // Sort ids to make IO reads sequential
+    final int[] sortedDocIDs = Arrays.copyOf(docIDs, docIDs.length);
+    Arrays.sort(sortedDocIDs);
+
+    // TODO: take advantage of different optimizations
+    for (int sortedDocID : sortedDocIDs) {
+      final SerializedDocument doc = document(sortedDocID);
+
+      visitSerializedDocument(doc, visitor);
+    }
   }
 
   @Override

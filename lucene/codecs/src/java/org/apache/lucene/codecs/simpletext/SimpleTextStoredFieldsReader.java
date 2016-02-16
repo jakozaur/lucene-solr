@@ -18,6 +18,7 @@ package org.apache.lucene.codecs.simpletext;
 
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.lucene.codecs.StoredFieldsReader;
 import org.apache.lucene.document.MultiDocumentStoredFieldVisitor;
@@ -152,7 +153,14 @@ public class SimpleTextStoredFieldsReader extends StoredFieldsReader {
   @Override
   public void visitDocuments(int[] docIDs, MultiDocumentStoredFieldVisitor visitor)
       throws IOException {
-    throw new UnsupportedOperationException();
+    // Sort ids to make IO reads sequential
+    final int[] sortedDocIDs = Arrays.copyOf(docIDs, docIDs.length);
+    Arrays.sort(sortedDocIDs);
+
+    for (int sortedDocID : sortedDocIDs) {
+      visitDocument(sortedDocID, visitor);
+      visitor.newDocument();
+    }
   }
   
   private void readField(BytesRef type, FieldInfo fieldInfo, StoredFieldVisitor visitor) throws IOException {
